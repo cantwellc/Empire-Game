@@ -1,12 +1,9 @@
 package edu.usc.cantwell.empire;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketException;
 import java.util.ArrayList;
 
 /**
@@ -17,12 +14,13 @@ import java.util.ArrayList;
  * @author Chris
  *
  */
-public class EmpireServer extends EmpireComponent {
+public class Server extends Component {
 	private ServerSocket serverSocket;
 	private int port;
-	private ArrayList<EmpireServerConnection> connections;
+	private ArrayList<ServerConnection> connections;
 	
-	public EmpireServer(){
+	public Server(EventHandler h){
+		super(h);
 		this.port = 4444;
 		try {
 			this.serverSocket = new ServerSocket(port);
@@ -41,7 +39,7 @@ public class EmpireServer extends EmpireComponent {
 			try {
 				Socket socket = this.serverSocket.accept();
 				System.out.println("Connection request received from " + socket.getInetAddress().toString());
-				EmpireServerConnection connection = new EmpireServerConnection(socket);
+				ServerConnection connection = new ServerConnection(socket);
 				this.connections.add(connection);
 				connection.start();
 			} catch (IOException e) {
@@ -51,12 +49,12 @@ public class EmpireServer extends EmpireComponent {
 	}
 	
 	
-	class EmpireServerConnection extends Thread{
+	class ServerConnection extends Thread{
 		Socket s;
 		ObjectOutputStream oos;
 		ObjectInputStream ois;
 		
-		public EmpireServerConnection(Socket s){
+		public ServerConnection(Socket s){
 			this.s = s;
 			try {
 				this.oos = new ObjectOutputStream(this.s.getOutputStream());
@@ -70,7 +68,7 @@ public class EmpireServer extends EmpireComponent {
 		public void run() {
 			while(!this.s.isClosed()){
 				try {
-					EmpireMessage em = (EmpireMessage) this.ois.readObject();
+					Message em = (Message) this.ois.readObject();
 					System.out.println("Message received from client " + this.s.getInetAddress().toString());
 					System.out.println(em.s);
 				} catch (ClassNotFoundException | IOException e) {
@@ -80,7 +78,7 @@ public class EmpireServer extends EmpireComponent {
 			}
 		}
 		
-		public void write(EmpireMessage em){
+		public void write(Message em){
 			try {
 				this.oos.writeObject(em);
 			} catch (IOException e) {
